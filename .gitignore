@@ -30,3 +30,5 @@ Thumbs.db
 
 # GCP ignore file
 .gcloudignore
+
+/src/generated/prisma

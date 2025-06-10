@@ -1,0 +1,27 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        BigInt   @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  provider    String? 
+  providerId  String?  @unique
+    name       String? 
+avatar String? @db.Text
+  createdAt DateTime @default(now())
+}
+model OAuthState {
+  id        Int      @id @default(autoincrement())
+  state     String   @unique
+frontendCallback String?
+  createdAt DateTime @default(now())
+}

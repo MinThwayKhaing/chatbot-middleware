@@ -1,9 +1,9 @@
-import { v2 } from '@google-cloud/dialogflow';
+import { v2 } from "@google-cloud/dialogflow";
 
 const documentsClient = new v2.DocumentsClient();
-
+import { parse } from "csv-parse/sync";
 const projectId = process.env.DIALOGFLOW_PROJECT_ID;
-const location = 'global'; // or your location
+const location = "global"; // or your location
 const parentBase = `projects/${projectId}/locations/${location}/knowledgeBases`;
 
 /**
@@ -12,7 +12,31 @@ const parentBase = `projects/${projectId}/locations/${location}/knowledgeBases`;
  * @param {number} pageSize
  * @param {string} pageToken
  * @returns {Promise<{documents: Array, nextPageToken: string}>}
+ * @param {Object} document - The Dialogflow document object
+ * @returns {Array} Array of FAQs with { question, answer }
  */
+
+export function parseCsvFromRawContent(document) {
+  if (!document.rawContent) {
+    throw new Error("No raw content found in the document.");
+  }
+
+  const csvString = document.rawContent.toString("utf-8");
+  console.log("CSV raw string:", csvString);
+
+  const records = parse(csvString, {
+    skip_empty_lines: true,
+    trim: true,
+  });
+
+  console.log(records); // e.g., [['Test', 'Test']]
+
+  return records.map((record) => ({
+    question: record[0] || "Unknown question",
+    answer: record[1] || "Unknown answer",
+  }));
+}
+
 export async function listDocuments(kbId, pageSize = 10, pageToken = null) {
   const parent = `${parentBase}/${kbId}`;
   const request = {
@@ -22,16 +46,14 @@ export async function listDocuments(kbId, pageSize = 10, pageToken = null) {
   };
   const [response] = await documentsClient.listDocuments(request);
 
-
-  const formattedData = response.map(kb => ({
-    name: kb.displayName,
-    id: kb.name.split('/').pop(), 
+  const formattedData = response.map((kb) => ({
+    displayName: kb.displayName,
+    id: kb.name.split("/").pop(),
     knowledgeTypes: kb.knowledgeTypes,
-    languageCode: kb.languageCode || 'en-US',  // fallback if missing
+    languageCode: kb.languageCode || "en-US", // fallback if missing
   }));
 
-console.log("formattedData",formattedData)
-
+  console.log("formattedData", formattedData);
 
   return {
     formattedData,
@@ -76,7 +98,12 @@ export async function createDocument(kbId, documentPayload) {
  * @param {string[]} updateMaskPaths - which fields to update
  * @returns {Promise<Object>}
  */
-export async function updateDocument(kbId, documentId, updatePayload, updateMaskPaths) {
+export async function updateDocument(
+  kbId,
+  documentId,
+  updatePayload,
+  updateMaskPaths
+) {
   const name = `${parentBase}/${kbId}/documents/${documentId}`;
   const request = {
     document: {

@@ -5,7 +5,7 @@ dotenv.config();
 
 import {
   createKnowledgeBase,
-  listKnowledgeBases,
+  enableKnowledgeBase,
   getKnowledgeBaseById,
   updateKnowledgeBaseStatus,
   deleteKnowledgeBase,
@@ -54,32 +54,6 @@ router.get("/", async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Pagination fetch failed",
-      error: error.message,
-    });
-  }
-});
-
-router.get("/", async (req, res) => {
-  try {
-    const kbList = await listKnowledgeBases();
-
-    // Map and transform the response items
-    const transformedList = kbList.map((kb) => ({
-      name: kb.displayName,
-      id: kb.name.split("/").pop(), // Extract the last part as id
-      languageCode: kb.languageCode,
-      enabled: kb.enabled,
-    }));
-
-    res.json({
-      success: true,
-      message: "Knowledge Bases retrieved successfully",
-      data: transformedList,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch knowledge bases",
       error: error.message,
     });
   }
@@ -137,9 +111,21 @@ router.delete("/:id", async (req, res) => {
     await deleteKnowledgeBase(req.params.id);
     res.json({ success: true, message: "Knowledge Base deleted" });
   } catch (error) {
+    console.error("Delete KB Error:", error.details);
     res
       .status(500)
-      .json({ success: false, message: "Delete failed", error: error.message });
+      .json({ success: false, message: error.details, error: error.details });
+  }
+});
+
+router.patch("/:id/enable", (req, res) => {
+  try {
+    const result = enableKnowledgeBase(req.params.id);
+    res.json({ success: true, message: "KB enabled", data: result });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Enable failed", error: error.message });
   }
 });
 

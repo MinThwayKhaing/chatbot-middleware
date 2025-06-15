@@ -2,6 +2,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
 datasource db {
@@ -15,9 +16,19 @@ model User {
   password  String
   provider    String? 
   providerId  String?  @unique
-    name       String? 
-avatar String? @db.Text
+  name       String? 
+  avatar String? @db.Text
   createdAt DateTime @default(now())
+  projects   Project[]
+}
+model Project {
+  id            BigInt   @id @default(autoincrement())
+  name          String
+  approveStatus Boolean
+  userId        BigInt
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 model OAuthState {
   id        Int      @id @default(autoincrement())
@@ -25,3 +36,4 @@ model OAuthState {
 frontendCallback String?
   createdAt DateTime @default(now())
 }
+
